@@ -52,24 +52,24 @@ public class ApplicationContext {
     private void doAutowired() {
         for (Map.Entry<String, BeanDefinition> definitionEntry : beanDefinitionMap.entrySet()) {
             if (!definitionEntry.getValue().isLazyInit()) {
-                this.getBean(definitionEntry.getKey());
+                this.getBean(definitionEntry.getKey(), true);
             }
         }
     }
 
-    public Object getBean(String beanName) {
+    public Object getBean(String beanName, boolean isInit) {
 
         BeanWrapper beanWrapper = instantiateBean(this.beanDefinitionMap.get(beanName));
 
         factoryBeanInstanceCache.put(beanName, beanWrapper);
 
         // 注入bean
-        populateBean(beanWrapper);
+        populateBean(beanWrapper, isInit);
 
         return this.factoryBeanInstanceCache.get(beanName).getWrappedInstance();
     }
 
-    private void populateBean(BeanWrapper beanWrapper) {
+    private void populateBean(BeanWrapper beanWrapper, boolean isInit) {
         Object instance = beanWrapper.getWrappedInstance();
         Class<?> clazz = beanWrapper.getWrappedClass();
         if (!clazz.isAnnotationPresent(Controller.class) && !clazz.isAnnotationPresent(Service.class)
@@ -78,6 +78,9 @@ public class ApplicationContext {
         }
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
+            if (field.isAnnotationPresent(Lazy.class) && isInit) {
+                continue;
+            }
             if (!field.isAnnotationPresent(Autowired.class)) {
                 continue;
             }

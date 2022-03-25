@@ -1,9 +1,6 @@
 package com.xing.study.spring.framework.beans.support;
 
-import com.xing.study.spring.framework.annotation.Component;
-import com.xing.study.spring.framework.annotation.Controller;
-import com.xing.study.spring.framework.annotation.Repository;
-import com.xing.study.spring.framework.annotation.Service;
+import com.xing.study.spring.framework.annotation.*;
 import com.xing.study.spring.framework.beans.config.BeanDefinition;
 
 import java.io.File;
@@ -92,6 +89,7 @@ public class BeanDefinitionReader {
                 // 自定义名字
                 String factoryBeanName = null;
                 Annotation[] annotatedInterfaces = clazz.getAnnotations();
+                boolean isLazy = false;
                 for (Annotation annotation : annotatedInterfaces) {
                     if (annotation instanceof Controller) {
                         factoryBeanName = ((Controller) annotation).value();
@@ -102,18 +100,21 @@ public class BeanDefinitionReader {
                     } else if (annotation instanceof Repository) {
                         factoryBeanName = ((Repository) annotation).value();
                     }
+                    if(annotation instanceof Lazy){
+                        isLazy = ((Lazy) annotation).value();
+                    }
                 }
                 if (factoryBeanName == null || "".equals(factoryBeanName.trim())) {
                     // 默认是类名首字母小写
                     factoryBeanName = toLowerFirstCase(clazz.getSimpleName());
                 }
 
-                beanDefinitionList.add(doCreateBeanDefinition(factoryBeanName, clazz.getName()));
+                beanDefinitionList.add(doCreateBeanDefinition(factoryBeanName, clazz.getName(),isLazy));
 
                 // 接口注入
                 Class<?>[] interfaces = clazz.getInterfaces();
                 for (Class<?> i : interfaces) {
-                    beanDefinitionList.add(doCreateBeanDefinition(i.getName(), clazz.getName()));
+                    beanDefinitionList.add(doCreateBeanDefinition(i.getName(), clazz.getName(), isLazy));
                 }
             }
         } catch (Exception e) {
@@ -127,12 +128,14 @@ public class BeanDefinitionReader {
      *
      * @param factoryBeanName 文件类名
      * @param beanClassName   文件全类名
+     * @param isLazy
      * @return BeanDefinition
      */
-    private BeanDefinition doCreateBeanDefinition(String factoryBeanName, String beanClassName) {
+    private BeanDefinition doCreateBeanDefinition(String factoryBeanName, String beanClassName, boolean isLazy) {
         BeanDefinition beanDefinition = new BeanDefinition();
         beanDefinition.setFactoryBeanName(factoryBeanName);
         beanDefinition.setBeanClassName(beanClassName);
+        beanDefinition.setLazyInit(isLazy);
         return beanDefinition;
     }
 
@@ -142,7 +145,7 @@ public class BeanDefinitionReader {
      * @param simpleName 类名
      * @return 类名首字母小写
      */
-    private String toLowerFirstCase(String simpleName) {
+    public String toLowerFirstCase(String simpleName) {
         return simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
     }
 

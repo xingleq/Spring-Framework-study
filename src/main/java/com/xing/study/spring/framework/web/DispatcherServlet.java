@@ -34,6 +34,8 @@ public class DispatcherServlet extends HttpServlet {
 
     private final List<ViewResolver> viewResolvers = new ArrayList<>();
 
+    private ApplicationContext context;
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         this.doPost(req, resp);
@@ -69,7 +71,7 @@ public class DispatcherServlet extends HttpServlet {
         assert ha != null;
 
         // 第三部，真正的调用方法,返回GPModelAndView（存储了要传递到页面上的值，和模板页面的名称）
-        ModelAndView mv = ha.handle(req, resp, handler);
+        ModelAndView mv = ha.handle(req, resp, handler, context);
 
         // 第四步，处理结果(真正的输出)
         processDispatchResult(resp, mv);
@@ -119,18 +121,16 @@ public class DispatcherServlet extends HttpServlet {
 
         // 初始化 ApplicationContext
         String contextConfigLocation = "contextConfigLocation";
-        ApplicationContext context = new ApplicationContext(config.getInitParameter(contextConfigLocation));
+        context = new ApplicationContext(config.getInitParameter(contextConfigLocation));
 
         // 初始化MVC 组件
-        initStrategies(context);
+        initStrategies();
     }
 
     /**
      * 初始化MVC 组件
-     *
-     * @param context ApplicationContext
      */
-    private void initStrategies(ApplicationContext context) {
+    private void initStrategies() {
         //多文件上传的组件
         initMultipartResolver();
         //初始化本地语言环境
@@ -138,7 +138,7 @@ public class DispatcherServlet extends HttpServlet {
         //初始化模板处理器
         initThemeResolver();
         //handlerMapping，必须实现
-        initHandlerMappings(context);
+        initHandlerMappings();
         //初始化参数适配器，必须实现
         initHandlerAdapters();
         //初始化异常拦截器
@@ -146,7 +146,7 @@ public class DispatcherServlet extends HttpServlet {
         //初始化视图预处理器
         initRequestToViewNameTranslator();
         //初始化视图转换器，必须实现
-        initViewResolvers(context);
+        initViewResolvers();
         //参数缓存器
         initFlashMapManager();
     }
@@ -154,7 +154,7 @@ public class DispatcherServlet extends HttpServlet {
     private void initFlashMapManager() {
     }
 
-    private void initViewResolvers(ApplicationContext context) {
+    private void initViewResolvers() {
         String templateRoot = context.getReader().getConfig().getProperty("templateRoot");
         URL templateRootPathUrl = this.getClass().getClassLoader().getResource(templateRoot);
         assert templateRootPathUrl != null;
@@ -180,11 +180,11 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
-    private void initHandlerMappings(ApplicationContext context) {
+    private void initHandlerMappings() {
         String[] beanDefinitionNames = context.getBeanDefinitionNames();
         try {
             for (String beanDefinitionName : beanDefinitionNames) {
-                Object controller = context.getBean(beanDefinitionName);
+                Object controller = context.getBean(beanDefinitionName, true);
                 Class<?> clazz = controller.getClass();
                 if (!clazz.isAnnotationPresent(Controller.class)) {
                     continue;

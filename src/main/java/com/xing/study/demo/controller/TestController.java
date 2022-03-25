@@ -1,10 +1,7 @@
 package com.xing.study.demo.controller;
 
 import com.xing.study.demo.service.TestService;
-import com.xing.study.spring.framework.annotation.Autowired;
-import com.xing.study.spring.framework.annotation.Controller;
-import com.xing.study.spring.framework.annotation.RequestMapping;
-import com.xing.study.spring.framework.annotation.RequestParam;
+import com.xing.study.spring.framework.annotation.*;
 import com.xing.study.spring.framework.web.servlet.ModelAndView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +18,14 @@ import java.util.UUID;
  * @version 1.0
  * @date 2022/3/23 16:49
  */
-@Controller
+@Lazy
+@Controller("myTestController")
 @RequestMapping("/web")
 public class TestController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    @Lazy
     @Autowired
     private TestService testService;
 
@@ -74,7 +73,7 @@ public class TestController {
         map.put("user", "xingle");
         map.put("data", "hello world for spring");
         map.put("token", UUID.randomUUID().toString().replaceAll("-", ""));
-        return new ModelAndView("first",map);
+        return new ModelAndView("first", map);
        /* try {
             resp.getWriter().write(str);
         } catch (IOException e) {

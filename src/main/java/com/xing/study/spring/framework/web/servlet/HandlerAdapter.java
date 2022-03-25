@@ -1,6 +1,9 @@
 package com.xing.study.spring.framework.web.servlet;
 
+import com.xing.study.spring.framework.annotation.Controller;
+import com.xing.study.spring.framework.annotation.Lazy;
 import com.xing.study.spring.framework.annotation.RequestParam;
+import com.xing.study.spring.framework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,7 +20,7 @@ import java.util.Map;
 public class HandlerAdapter {
 
 
-    public ModelAndView handle(HttpServletRequest req, HttpServletResponse resp, HandlerMapping handler) throws Exception {
+    public ModelAndView handle(HttpServletRequest req, HttpServletResponse resp, HandlerMapping handler, ApplicationContext context) throws Exception {
 
         //第一步，把方法的形参列表和request的参数列表所在的顺序进行一一对应
         Map<String, Integer> paramsIndexMappings = new HashMap<>();
@@ -68,7 +71,17 @@ public class HandlerAdapter {
         }
 
         // 第四步，反射调用方法得到结果,判断并返回
-        Object result = handler.getMethod().invoke(handler.getController(), paramValues);
+        Object controller = handler.getController();
+        Class<?> clazz = controller.getClass();
+        if (clazz.isAnnotationPresent(Lazy.class)) {
+            Controller annotation = clazz.getAnnotation(Controller.class);
+            String beanName = annotation.value();
+            if (beanName == null || "".equals(beanName.trim())) {
+                beanName = context.getReader().toLowerFirstCase(clazz.getSimpleName());
+            }
+            controller = context.getBean(beanName,false);
+        }
+        Object result = handler.getMethod().invoke(controller, paramValues);
         if (result == null) {
             return null;
         }
